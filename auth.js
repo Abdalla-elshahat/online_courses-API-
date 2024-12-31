@@ -60,7 +60,9 @@ app.post("/signup", upload.single("avatar"), async (req, res) => {
     //     error: err.message,
     //   });
     // }
-    const avatar = req.file? req.file.filename: "no-photo-available-icon-20.jpg";
+    const avatar = req.file
+      ? req.file.filename
+      : "no-photo-available-icon-20.jpg";
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await logins.create({
       username,
@@ -100,11 +102,11 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
     const user = await logins.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message:"Invalid email or password"});
+      return res.status(401).json({ message: "Invalid email or password" });
     }
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({ message:"Invalid email or password"});
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const token = generateJWT({
@@ -120,11 +122,12 @@ app.post("/login", async (req, res) => {
 });
 //update data
 app.patch("/update_data", verfiytoken, async (req, res) => {
-  const { username, avatar, job, socialmedia} = req.body;
-  if (!username && !avatar && !job && !socialmedia) {
+  const { username, avatar, job, socialmedia, country } = req.body;
+  if (!username && !avatar && !job && !socialmedia && !country) {
     return res.status(400).json({
       status: 400,
-      message: "At least one field (username, avatar, job, or socialmedia) must be provided for update",
+      message:
+        "At least one field (username, avatar, job, or socialmedia) must be provided for update",
     });
   }
   try {
@@ -133,7 +136,7 @@ app.patch("/update_data", verfiytoken, async (req, res) => {
     if (avatar !== undefined) updateData.avatar = avatar;
     if (job !== undefined) updateData.job = job;
     if (socialmedia !== undefined) updateData.socialmedia = socialmedia;
-
+    if (country !== undefined) updateData.country = country;
     const updatedUser = await logins.findByIdAndUpdate(
       req.user.id,
       { $set: updateData }, // Only update provided fields
@@ -158,18 +161,11 @@ app.patch("/update_data", verfiytoken, async (req, res) => {
     });
   }
 });
-
-//update role
-app.patch("/users-role/:user_id",verfiytoken,allowTo(userroles.ADMIN, userroles.MANGER), async (req, res) => {
-  const { user_id } = req.params;
-  const {role} = req.body;
+//delete email //مسح الحساب
+app.delete("/delete_data", verfiytoken, async (req, res) => {
   try {
-    const updatedUser = await logins.findByIdAndUpdate(
-      user_id,
-      { $set:{role} }, // Update only the provided fields
-      { new: true, runValidators: true } // Return the updated document and validate
-    );
-    if (!updatedUser) {
+    const deletedUser = await logins.findByIdAndDelete(req.user.id);
+    if (!deletedUser) {
       return res.status(404).json({
         status: 404,
         message: "User not found",
@@ -177,17 +173,50 @@ app.patch("/users-role/:user_id",verfiytoken,allowTo(userroles.ADMIN, userroles.
     }
     return res.status(200).json({
       status: 200,
-      message: "User updated role successfully",
-      data: updatedUser,
+      message: "User deleted successfully",
     });
   } catch (error) {
     return res.status(500).json({
       status: 500,
-      message: "Failed to update role",
+      message: "Failed to delete user",
       error: error.message,
     });
   }
 });
+//update role
+app.patch(
+  "/users-role/:user_id",
+  verfiytoken,
+  allowTo(userroles.ADMIN, userroles.MANGER),
+  async (req, res) => {
+    const { user_id } = req.params;
+    const { role } = req.body;
+    try {
+      const updatedUser = await logins.findByIdAndUpdate(
+        user_id,
+        { $set: { role } }, // Update only the provided fields
+        { new: true, runValidators: true } // Return the updated document and validate
+      );
+      if (!updatedUser) {
+        return res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      }
+      return res.status(200).json({
+        status: 200,
+        message: "User updated role successfully",
+        data: updatedUser,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        status: 500,
+        message: "Failed to update role",
+        error: error.message,
+      });
+    }
+  }
+);
 //update pass
 app.patch("/update_pass/:user_id", verfiytoken, async (req, res) => {
   const { user_id } = req.params;
@@ -236,6 +265,76 @@ app.patch("/update_pass/:user_id", verfiytoken, async (req, res) => {
     });
   }
 });
+
+//sendfollow
+app.patch("/sendfollow", verfiytoken, async (req, res) => {
+  const  user_id  = req.user.id;
+  const { follow_id } = req.body;
+  const follow = await logins.findById(follow_id);
+  if (!follow) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  const followUser = await logins.findOne({
+    $and: [{ _id: user_id },{ followers: { $in: [follow_id] }}],
+  });
+  if (followUser) {
+    return res
+      .status(400)
+      .json({ message: "You are already following this user" });
+  }
+  const updatedUser = await logins.findByIdAndUpdate(
+user_id,
+    {
+      $push: { followers: follow_id },
+    },
+    { new: true,runValidators: true  }
+  );
+  return res.status(200).json({
+    status: 200,
+    message: "Followed successfully",
+    data: {
+      id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      followers: updatedUser.followers,
+    },
+  });
+});
+//removefollow
+app.patch("/removefollow", verfiytoken, async (req, res) => {
+  const  user_id  = req.user.id;
+  const { follow_id } = req.body;
+  const follow = await logins.findById(follow_id);
+  if (!follow) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  const followUser = await logins.findOne({
+    $and: [{ _id: user_id },{ followers: { $in: [follow_id] }}],
+  });
+  if (!followUser) {
+    return res
+      .status(400)
+      .json({ message: "You are already not following this user" });
+  }
+  const updatedUser = await logins.findByIdAndUpdate(
+user_id,
+    {
+      $pull: { followers: follow_id },
+    },
+    { new: true,runValidators: true  }
+  );
+  return res.status(200).json({
+    status: 200,
+    message: "unFollowed successfully",
+    data: {
+      id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      followers: updatedUser.followers,
+    },
+  });
+});
+
 app.post("/logout", (req, res) => {
   try {
     res.clearCookie("token");
@@ -245,4 +344,5 @@ app.post("/logout", (req, res) => {
     res.status(500).json({ message: "An error occurred during logout" });
   }
 });
+
 module.exports = app;

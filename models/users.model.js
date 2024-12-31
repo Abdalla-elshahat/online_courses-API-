@@ -16,6 +16,11 @@ const loginSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    required:false,
+    minlength:10
+  },
   token: {
     type: String,
     require: false,
@@ -40,6 +45,16 @@ const loginSchema = new mongoose.Schema({
   },
   favorites: {
     type: Array,
+  },
+  posts: {
+    type: Array,
+  },
+  followers: {
+    type: Array,
+  },
+  country: {
+    type: String,
+    require:true
   },
 });
 

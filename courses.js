@@ -12,6 +12,7 @@ mongoose.connect(url).then(() => {
   console.log("connected to database");
 });
 const courses = require("./models/courses.model");
+const logins = require("./models/users.model");
 const reviews = require("./models/reviews.model");
 const users = require("./models/users.model");
 const allowTo = require("./middleware/allow-to");
@@ -65,6 +66,7 @@ app.get("/:id", async (req, res) => {
   }
 });
 app.post("/add",courseimg.single("imgcourse"),verfiytoken,allowTo(userroles.ADMIN, userroles.MANGER),async (req, res) => {
+const  user_Id=req.user.id
     try {
     const {title ,description, price ,isPublished,author,status,category}=req.body;
     const  imgcourse= req.file? req.file.filename: "no-photo-available-icon-20.jpg";
@@ -78,16 +80,30 @@ app.post("/add",courseimg.single("imgcourse"),verfiytoken,allowTo(userroles.ADMI
            category:category ,
            imgcourse:imgcourse ,
           });
-      res
-        .status(201)
-        .json({ status: httpconstent.SUCCESS, data: { newcourse } });
+          // Update the user's posts with the new course ID
+      const userUpdateResult = await logins.findByIdAndUpdate(
+        user_Id,
+        { $push: { posts: newcourse._id } },
+        { new: true } // Return the updated document
+      );
+      if (!userUpdateResult) {
+        return res.status(404).json({
+          status: httpconstent.ERROR,
+          data: null,
+          message: "User not found",
+        });
+      }
+
+      res.status(201).json({
+        status: httpconstent.SUCCESS,
+        data: { newcourse },
+      });
     } catch (error) {
       console.error("Error creating course:", error);
       res.status(500).json({
         status: httpconstent.ERROR,
         data: null,
-        message: "invalid code",
-        status: 500,
+        message: "An error occurred while creating the course",
       });
     }
   }
