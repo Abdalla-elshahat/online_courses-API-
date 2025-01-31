@@ -34,9 +34,12 @@ const loginSchema = new mongoose.Schema({
     type: String,
     default: `uplouds/no-photo-available-icon-20.jpg`,
   },
-  jop: {
+  job: {
     type: String,
-    require: false,
+  },
+  country: {
+    type: String,
+    require:false
   },
   socialmedia: {
     type: Object,
@@ -49,13 +52,21 @@ const loginSchema = new mongoose.Schema({
   posts: {
     type: Array,
   },
+  quiz:{
+    type: Array,
+  },
+  quiztaken:{
+    type: Array,
+  },
   followers: {
     type: Array,
   },
-  country: {
-    type: String,
-    require:true
+  followRequests:{
+    type:Array,
   },
+  skills:{
+    type:Array,
+  }
 });
 
 module.exports = mongoose.model("Login", loginSchema);

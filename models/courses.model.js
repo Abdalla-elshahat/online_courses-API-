@@ -1,11 +1,9 @@
 const mongoose = require("mongoose");
-
 // Define the schema correctly
 const courseSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
-    trim: true,
   },
   description: {
     type: String,
@@ -20,7 +18,7 @@ const courseSchema = new mongoose.Schema({
   },
   author: {
     type: String,
-    required: true,
+    // required: true,
   },
   status:{
     type:String,
@@ -36,6 +34,9 @@ const courseSchema = new mongoose.Schema({
     type:String,
     default: `coursesimg/no-photo-available-icon-20.jpg`,
     require:false
+  },
+  quiz:{
+    type:Array,
   },
   createdAt:{
     type:Date,

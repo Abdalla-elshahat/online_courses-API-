@@ -5,5 +5,5 @@ module.exports = function generateToken(payload) {
     throw new Error("Environment variable JWT_SECRET is not defined");
   }
 
-  return jwt.sign(payload, process.env.jwtsecret, { expiresIn: "100min" });
+  return jwt.sign(payload, process.env.jwtsecret, { expiresIn: "30d" });
 };
