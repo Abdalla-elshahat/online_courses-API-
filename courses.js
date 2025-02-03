@@ -213,7 +213,6 @@ app.delete("/delete/:id", verfiytoken, allowTo(userroles.ADMIN, userroles.MANGER
     const user_Id = req.user.id;
     try {
         const course = await courses.findOneAndDelete({ _id: id });
-        console.log(course)
         if (course) {
             const userUpdateResult = await logins.findByIdAndUpdate(
                 user_Id,

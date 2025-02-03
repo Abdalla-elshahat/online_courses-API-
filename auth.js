@@ -1,4 +1,6 @@
 require("dotenv").config();
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client("237774589324-lsb5f7vcap7nj851kr3f2109d3c4je5a.apps.googleusercontent.com"); // ضع Client ID هنا
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -535,4 +537,5 @@ app.post("/logout", (req, res) => {
     res.status(500).json({ message: "An error occurred during logout" });
   }
 });
+
 module.exports = app;
