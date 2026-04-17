@@ -4,11 +4,13 @@ const path = require("path");
 const courses = require("./courses");
 const auth = require("./auth");
 const quiz = require("./quiz");
+const dotenv = require("dotenv");
+dotenv.config();
 app.use("/uplouds", express.static(path.join(__dirname, "uplouds"))); // عرض الصور الثابتة
 
-app.use("/api/courses",courses);
-app.use("/api/users",auth);
-app.use("/api/quiz",quiz);
+app.use("/api/courses", courses);
+app.use("/api/users", auth);
+app.use("/api/quiz", quiz);
 
 app.all("*", (req, res) => {
   res.status(404).json({ message: "Route not found" });
