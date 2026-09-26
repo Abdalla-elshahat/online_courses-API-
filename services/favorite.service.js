@@ -1,10 +1,15 @@
 const userRepository = require("../repositories/user.repository");
 const courseRepository = require("../repositories/course.repository");
 const { AppError } = require("../utles/app-error");
+const { requireObjectId } = require("../utles/validate");
 
 const userNotFound = () => new AppError(404, { status: 404, message: "User not found" });
 
 const addFavorite = async (userId, courseId) => {
+  requireObjectId(courseId, "courseId");
+  if (!(await courseRepository.findById(courseId))) {
+    throw new AppError(404, { status: 404, message: "Course not found" });
+  }
   const user = await userRepository.updateById(userId, { $addToSet: { favorites: courseId } });
   if (!user) throw userNotFound();
 };
@@ -26,6 +31,7 @@ const getFavorites = async (userId) => {
 };
 
 const removeFavorite = async (userId, courseId) => {
+  requireObjectId(courseId, "courseId");
   const user = await userRepository.findById(userId, { favorites: 1 });
   if (!user) throw userNotFound();
 

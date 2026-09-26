@@ -1,10 +1,15 @@
 const userRepository = require("../repositories/user.repository");
 const { AppError } = require("../utles/app-error");
+const { requireObjectId } = require("../utles/validate");
 
 const userNotFound = () => new AppError(404, { message: "User not found" });
 
 // userId sends a follow request to followId
 const sendFollowRequest = async (userId, followId) => {
+  requireObjectId(followId, "follow_id");
+  if (followId === userId) {
+    throw new AppError(400, { message: "You cannot follow yourself" });
+  }
   const target = await userRepository.findById(followId);
   if (!target) throw userNotFound();
 
@@ -17,13 +22,14 @@ const sendFollowRequest = async (userId, followId) => {
 
   await userRepository.updateById(
     followId,
-    { $push: { followRequests: userId } },
+    { $addToSet: { followRequests: userId } },
     { new: true, runValidators: true }
   );
 };
 
 // returns the response message for the chosen action ("accept" | "reject")
 const handleFollowRequest = async (userId, requesterId, action) => {
+  requireObjectId(requesterId, "requester_id");
   const user = await userRepository.findById(userId);
   if (!user) throw userNotFound();
 
@@ -34,12 +40,12 @@ const handleFollowRequest = async (userId, requesterId, action) => {
   if (action === "accept") {
     await userRepository.updateById(
       userId,
-      { $push: { followers: requesterId }, $pull: { followRequests: requesterId } },
+      { $addToSet: { followers: requesterId }, $pull: { followRequests: requesterId } },
       { new: true, runValidators: true }
     );
     await userRepository.updateById(
       requesterId,
-      { $push: { followers: userId } },
+      { $addToSet: { followers: userId } },
       { new: true, runValidators: true }
     );
     return "Follow request accepted";
@@ -59,6 +65,7 @@ const handleFollowRequest = async (userId, requesterId, action) => {
 
 // cancels a pending request or unfollows; returns the response message
 const removeFollow = async (userId, followId) => {
+  requireObjectId(followId, "follow_id");
   const target = await userRepository.findById(followId);
   if (!target) throw userNotFound();
 
@@ -89,13 +96,13 @@ const getFollowRequests = async (userId) => {
 const getNonFollowers = async (userId) => {
   const user = await userRepository.findById(userId);
   if (!user) throw userNotFound();
-  return userRepository.findPublicExcluding([...(user.followers || []), userId]);
+  return userRepository.findProfilesExcluding([...(user.followers || []), userId]);
 };
 
 const getFollowers = async (userId) => {
   const user = await userRepository.findById(userId);
   if (!user) throw userNotFound();
-  return userRepository.findPublicFollowersOf(userId);
+  return userRepository.findProfilesFollowing(userId);
 };
 
 module.exports = {

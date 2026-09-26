@@ -3,6 +3,7 @@ const verifyToken = require("../middleware/verify-token");
 const allowTo = require("../middleware/allow-to");
 const { upload } = require("../middleware/handle-imges");
 const userroles = require("../utles/Role-users");
+const { authLimiter } = require("../middleware/rate-limit");
 const authController = require("../controllers/auth.controller");
 const userController = require("../controllers/user.controller");
 const followController = require("../controllers/follow.controller");
@@ -10,23 +11,20 @@ const followController = require("../controllers/follow.controller");
 const router = express.Router();
 
 // auth
-router.post("/signup", upload.single("avatar"), authController.signup);
-router.post("/login", authController.login);
+router.post("/signup", authLimiter, upload.single("avatar"), authController.signup);
+router.post("/login", authLimiter, authController.login);
 router.post("/logout", authController.logout);
-router.patch("/update_pass", verifyToken, authController.updatePassword);
+router.patch("/update_pass", authLimiter, verifyToken, authController.updatePassword);
 
 // users
-router.get("/", verifyToken, userController.getAllUsers);
+const adminOnly = [verifyToken, allowTo(userroles.ADMIN)];
+
+router.get("/", adminOnly, userController.getAllUsers);
 router.get("/alldata", verifyToken, userController.getMe);
 router.get("/dataofuser/:id", verifyToken, userController.getUserById);
 router.patch("/update_data", verifyToken, upload.single("avatar"), userController.updateProfile);
 router.delete("/delete_data", verifyToken, userController.deleteAccount);
-router.patch(
-  "/users-role/:user_id",
-  verifyToken,
-  allowTo(userroles.ADMIN, userroles.MANGER),
-  userController.updateRole
-);
+router.patch("/users-role/:user_id", adminOnly, userController.updateRole);
 
 // follow
 router.post("/sendfollow", verifyToken, followController.sendFollowRequest);

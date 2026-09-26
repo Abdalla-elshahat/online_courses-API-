@@ -1,21 +1,25 @@
-const jwt = require("jsonwebtoken");
+const authService = require("../services/auth.service");
 
-const verifyToken = (req, res, next) => {
+const readBearerToken = (req) => {
+  const authHeader = req.header("Authorization");
+  const token = authHeader && authHeader.split(" ")[1];
+  return token && token !== "undefined" && token !== "null" ? token : null;
+};
+
+// requires a valid, non-revoked token; sets req.user = { id, email, role }
+const verifyToken = async (req, res, next) => {
+  const token = readBearerToken(req);
+  if (!token) {
+    return res.status(401).send("Access denied. No token provided.");
+  }
   try {
-    const authHeader = req.header("Authorization") || req.header("authorization");
-    if (!authHeader) {
-      return res.status(401).send("Access denied. No token provided.");
-    }
-    const token = authHeader.split(" ")[1];
-    if (!token || token === "undefined" || token === "null") {
-      return res.status(401).send("Access denied. Token missing.");
-    }
-    req.user = jwt.verify(token, process.env.jwtsecret);
+    req.user = await authService.resolveSession(token);
     next();
   } catch (err) {
-    console.error("Token verification error:", err.message);
     return res.status(401).send("Invalid token.");
   }
 };
+
+verifyToken.readBearerToken = readBearerToken;
 
 module.exports = verifyToken;

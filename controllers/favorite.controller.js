@@ -1,8 +1,10 @@
 const favoriteService = require("../services/favorite.service");
 const { sendIfAppError } = require("../utles/app-error");
 
-const serverError = (res, error) =>
-  res.status(500).json({ status: 500, message: "Internal Server Error", error: error.message });
+const serverError = (res, error) => {
+  console.error("Favorites error:", error);
+  res.status(500).json({ status: 500, message: "Internal Server Error" });
+};
 
 const addFavorite = async (req, res) => {
   try {

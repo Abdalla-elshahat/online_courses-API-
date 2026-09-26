@@ -32,7 +32,7 @@ const loginSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    default: `uplouds/no-photo-available-icon-20.jpg`,
+    default: "no-photo-available-icon-20.jpg",
   },
   job: {
     type: String,
@@ -66,7 +66,12 @@ const loginSchema = new mongoose.Schema({
   },
   skills:{
     type:Array,
-  }
+  },
+  // bumped on logout / password change to revoke every issued JWT
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model("Login", loginSchema);

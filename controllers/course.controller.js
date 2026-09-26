@@ -2,8 +2,10 @@ const courseService = require("../services/course.service");
 const httpconstent = require("../utles/httpconstent");
 const { sendIfAppError } = require("../utles/app-error");
 
-const serverError = (res, error, message = "Internal Server Error") =>
-  res.status(500).json({ status: 500, message, error: error.message });
+const serverError = (res, error, message = "Internal Server Error") => {
+  console.error(message, error);
+  res.status(500).json({ status: 500, message });
+};
 
 const search = async (req, res) => {
   try {
@@ -11,7 +13,6 @@ const search = async (req, res) => {
     res.json({ status: 200, data: { courses } });
   } catch (error) {
     if (sendIfAppError(res, error)) return;
-    console.error("Error fetching courses:", error);
     serverError(res, error, "An unexpected error occurred while fetching courses.");
   }
 };
@@ -23,7 +24,7 @@ const getMyCourses = async (req, res) => {
   } catch (error) {
     if (sendIfAppError(res, error)) return;
     console.error("Error fetching courses by posts:", error.message);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -57,7 +58,7 @@ const getCourse = async (req, res) => {
 
 const createCourse = async (req, res) => {
   try {
-    const newcourse = await courseService.createCourse(req.user.id, req.body, req.file?.filename);
+    const newcourse = await courseService.createCourse(req.user.id, req.body, req.file);
     res.status(201).json({ status: httpconstent.SUCCESS, data: { newcourse } });
   } catch (error) {
     if (sendIfAppError(res, error)) return;
@@ -73,9 +74,10 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const updatedCourse = await courseService.updateCourse(
+      req.user,
       req.params.id,
       req.body,
-      req.file?.filename
+      req.file
     );
     res.status(200).json({ status: httpconstent.SUCCESS, data: { updatedCourse } });
   } catch (error) {
@@ -90,7 +92,7 @@ const updateCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   try {
-    const data = await courseService.deleteCourse(req.user.id, req.params.id);
+    const data = await courseService.deleteCourse(req.user, req.params.id);
     res.status(200).json({
       status: httpconstent.SUCCESS,
       message: "Course deleted successfully",
@@ -108,7 +110,7 @@ const deleteCourse = async (req, res) => {
 
 const updateStatus = async (req, res) => {
   try {
-    const course = await courseService.updateStatus(req.params.courses_id, req.body.status);
+    const course = await courseService.updateStatus(req.user, req.params.courses_id, req.body.status);
     res.json({ status: 200, message: "Course status updated successfully", data: { course } });
   } catch (error) {
     if (sendIfAppError(res, error)) return;

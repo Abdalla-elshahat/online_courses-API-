@@ -12,6 +12,7 @@ const courseSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
+    min: 0,
   },
   isPublished: {
     type: Boolean,
@@ -32,7 +33,7 @@ const courseSchema = new mongoose.Schema({
   },
   imgcourse:{
     type:String,
-    default: `coursesimg/no-photo-available-icon-20.jpg`,
+    default: "no-photo-available-icon-20.jpg",
     require:false
   },
   quiz:{

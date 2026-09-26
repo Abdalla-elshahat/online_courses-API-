@@ -57,7 +57,7 @@ const getNonFollowers = async (req, res) => {
   } catch (error) {
     if (sendIfAppError(res, error)) return;
     console.error("Error fetching non-followers:", error);
-    res.status(500).json({ message: "An error occurred", error });
+    res.status(500).json({ message: "An error occurred" });
   }
 };
 
@@ -67,7 +67,7 @@ const getFollowers = async (req, res) => {
   } catch (error) {
     if (sendIfAppError(res, error)) return;
     console.error("Error fetching followers:", error);
-    res.status(500).json({ message: "An error occurred", error });
+    res.status(500).json({ message: "An error occurred" });
   }
 };
 

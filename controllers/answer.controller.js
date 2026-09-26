@@ -3,7 +3,8 @@ const { sendIfAppError } = require("../utles/app-error");
 
 const handleError = (res, error) => {
   if (sendIfAppError(res, error)) return;
-  res.status(500).json({ message: error.message });
+  console.error("Answer error:", error);
+  res.status(500).json({ message: "Internal server error" });
 };
 
 const submitAnswers = async (req, res) => {
@@ -34,7 +35,7 @@ const getMyAnswers = async (req, res) => {
 
 const getQuizAnswers = async (req, res) => {
   try {
-    const data = await answerService.getQuizAnswers(req.params.quizId);
+    const data = await answerService.getQuizAnswers(req.user, req.params.quizId);
     res.status(200).json({ status: "success", data });
   } catch (error) {
     handleError(res, error);

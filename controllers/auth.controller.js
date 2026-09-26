@@ -1,14 +1,15 @@
 const authService = require("../services/auth.service");
+const { readBearerToken } = require("../middleware/verify-token");
 const { sendIfAppError } = require("../utles/app-error");
 
 const signup = async (req, res) => {
   try {
-    const user = await authService.signup(req.body, req.file?.filename);
+    const user = await authService.signup(req.body, req.file);
     res.status(201).json({ message: "User registered successfully", user });
   } catch (error) {
     if (sendIfAppError(res, error)) return;
     console.error("Error during signup:", error);
-    res.status(500).json({ message: "An error occurred", error });
+    res.status(500).json({ message: "An error occurred" });
   }
 };
 
@@ -28,11 +29,14 @@ const login = async (req, res) => {
   }
 };
 
-const logout = (req, res) => {
-  if (!req.cookies.token) {
-    return res.status(400).json({ message: "No token found in cookies" });
+// revokes the caller's tokens (header or cookie) and clears the cookie; always succeeds
+const logout = async (req, res) => {
+  try {
+    await authService.logout(readBearerToken(req) || req.cookies.token);
+  } catch (error) {
+    console.error("Error during logout:", error);
   }
-  res.clearCookie("token", { httpOnly: true, secure: true });
+  res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production" });
   res.status(200).json({ message: "Logout successful" });
 };
 
@@ -46,7 +50,6 @@ const updatePassword = async (req, res) => {
     res.status(500).json({
       status: 500,
       message: "Failed to update password",
-      error: error.message,
     });
   }
 };
